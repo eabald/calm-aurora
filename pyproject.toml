@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cidoc-rag-assistant"
+name = "calm-aurora"
 version = "0.1.0"
-description = "FAISS-based RAG assistant for CIDOC CRM"
+description = "Calm Aurora: FAISS-based research assistant for CIDOC CRM and RDF workflows"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

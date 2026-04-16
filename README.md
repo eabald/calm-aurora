@@ -1,15 +1,98 @@
-# CIDOC RAG Assistant
+# Calm Aurora
 
-Modular FAISS-based RAG assistant for CIDOC CRM.
+[![Build Status](https://github.com/eabald/calm-aurora/actions/workflows/ci.yml/badge.svg)](https://github.com/eabald/calm-aurora/actions/workflows/ci.yml)
+
+Calm Aurora is an open-source, research-oriented RAG assistant for CIDOC CRM and related RDF vocabularies.
+
+> MVP status: Calm Aurora is an early-stage prototype. Features, CLI behavior, prompts, and output formats may change between releases.
+
+It combines:
+
+- FAISS-based semantic retrieval
+- CIDOC-aware prompt construction
+- Agentic chat turn policy (retrieve, reuse context, or clarify)
+- RDF/Turtle import-edit-save workflow directly in chat
+
+Project status: MVP (actively evolving).
+
+## MVP Scope and Expectations
+
+- This project is currently focused on fast iteration and research utility, not production hardening.
+- No formal stable release has been published yet.
+- Backward compatibility is not guaranteed yet.
+- Generated mappings and RDF edits require expert review before use in authoritative datasets.
+- Edge cases and performance regressions may still be present.
+- Feedback and issue reports are highly encouraged at this stage.
+
+## Why Calm Aurora
+
+Calm Aurora is designed for cultural heritage and ontology-heavy workflows where answers must be grounded in schema definitions and provenance-aware context. The repository is structured to support:
+
+- Experimentation with retrieval and prompting strategies
+- Reproducible local runs (including an offline smoke mode)
+- Practical annotation and ontology editing loops with LLM assistance
+
+## Core Capabilities
+
+- Ingestion from JSON, JSONL, text, markdown, and RDF-family formats
+- Normalization into CIDOC-like entries (class/property oriented)
+- Embedding generation + FAISS index build
+- Retrieval CLI and grounded QA/mapping CLI
+- Interactive chat with runtime controls and export
+- Session export to JSON, Markdown, and RDF citation triples
+- In-chat RDF editing via `import-rdf`, `apply-rdf`, and `save-rdf`
 
 ## Supported Input Formats
 
-1. JSON (`.json`)
-1. JSONL (`.jsonl`)
-1. Text/Markdown (`.txt`, `.md`)
-1. RDF (`.ttl`, `.rdf`, `.owl`, `.nt`, `.n3`, `.xml`)
+- `.json`
+- `.jsonl`
+- `.txt`
+- `.md`
+- `.ttl`
+- `.rdf`
+- `.owl`
+- `.nt`
+- `.n3`
+- `.xml`
 
-## Quick Start
+## Repository Layout
+
+```text
+.
+|- src/cidoc_rag/
+|  |- agent/           # turn policy
+|  |- cli/             # ingest/retrieve/app/chat entrypoints
+|  |- embeddings/      # embedding client/service
+|  |- exporters/       # session export serializers
+|  |- ingestion/       # loading, normalization, indexing pipeline helpers
+|  |- prompting/       # context + prompt builders
+|  \- retrieval/       # retrieval service
+|- tests/              # unit tests
+|- data/               # sample/raw/vector artifacts
+|- smoke_test.py       # end-to-end smoke runner
+\- Makefile            # developer shortcuts
+```
+
+## System Overview
+
+```text
+Input files -> Loader/Normalizer -> Embeddings -> FAISS index + metadata
+                           |
+                           v
+                       Retrieval service
+                           |
+User query -> Mode detection + turn policy -> Prompt builder -> LLM -> Answer
+                  |
+                  \-> Chat exports + RDF edit workflow
+```
+
+## Requirements
+
+- Python 3.10+
+- Ollama (for online embedding/generation paths)
+- Local disk space for FAISS index and metadata artifacts
+
+## Installation
 
 1. Install dependencies:
 
@@ -23,7 +106,13 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-1. Start Ollama and pull required models:
+1. Configure environment:
+
+```bash
+cp .env.example .env
+```
+
+1. Start Ollama and pull models:
 
 ```bash
 ollama serve
@@ -31,19 +120,15 @@ ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
-1. Configure environment (copy and adjust as needed):
-
-```bash
-cp .env.example .env
-```
-
-If Ollama model cold-start is slow on your machine, increase request timeout in `.env`:
+If model cold-start is slow, increase timeout in `.env`:
 
 ```bash
 OLLAMA_TIMEOUT_S=180
 ```
 
-1. Ingest CIDOC data:
+## Quick Start
+
+1. Ingest data:
 
 ```bash
 PYTHONPATH=src python -m cidoc_rag.cli.ingest_cli data/raw --out-dir data/vectorstore
@@ -55,33 +140,19 @@ PYTHONPATH=src python -m cidoc_rag.cli.ingest_cli data/raw --out-dir data/vector
 PYTHONPATH=src python -m cidoc_rag.cli.retrieve_cli "What is E21?" --top-k 5
 ```
 
-1. Generate grounded answer:
+1. Ask grounded question:
 
 ```bash
 PYTHONPATH=src python -m cidoc_rag.cli.app_cli "What is E21?" --k 5
 ```
 
-1. Start interactive chat:
+1. Start chat:
 
 ```bash
 PYTHONPATH=src python -m cidoc_rag.cli.app_cli --chat --k 5 --history-turns 4
 ```
 
-## Interactive Chat
-
-The chat interface continuously accepts questions and uses an agentic policy per turn:
-
-- Runs retrieval when CIDOC/domain grounding is needed.
-- Skips retrieval for simple small-talk/meta turns.
-- Asks one clarifying question when the request is ambiguous.
-
-1. Start chat mode:
-
-```bash
-PYTHONPATH=src python -m cidoc_rag.cli.app_cli --chat --k 5 --history-turns 4 --debug
-```
-
-1. Runtime commands while chatting:
+## Chat Runtime Commands
 
 ```text
 debug on
@@ -99,69 +170,109 @@ exit
 quit
 ```
 
-1. RDF/Turtle edit workflow in chat:
+### Chat Behavior
+
+- Retrieval is policy-driven per turn.
+- Small-talk/meta turns can skip retrieval.
+- Ambiguous follow-ups can trigger one clarifying question.
+- Recent conversation is truncated by `--history-turns`.
+- Mapping responses are pretty-printed JSON when valid.
+
+## RDF/Turtle Edit Workflow
 
 ```text
-# Import an existing RDF/Turtle file into the session
 you> import-rdf ./data/raw/my_ontology.ttl
-
-# Ask for changes and request full updated RDF/Turtle output
-you> Add an rdfs:comment to E21 and return the full updated TTL in a ```ttl block.
-
-# Apply the last assistant RDF output to the in-memory RDF buffer
+you> Add rdfs:comment to E21 and return full updated TTL in a ttl code block.
 you> apply-rdf
-
-# Save to a new file (or use save-rdf with no path to overwrite imported path)
 you> save-rdf ./data/raw/my_ontology.edited.ttl
 ```
 
-1. Multiline input while chatting:
+Notes:
 
-```text
-# Option A: end a line with backslash to continue
-you> map this entity to CIDOC classes and properties \
-... including temporal constraints and written text.
+- `apply-rdf` extracts RDF/Turtle from the last assistant response.
+- `save-rdf` without a path overwrites the currently imported RDF path.
 
-# Option B: use block delimiters (""", ''' , or ```)
-you> """
-... Describe this inscription and include start/end date mapping.
-... Return JSON only.
-... """
-```
-
-1. Behavior notes:
-
-- Retrieval runs only when the policy marks it as necessary.
-- Follow-up questions can reuse recent context without forced retrieval.
-- Ambiguous turns trigger a single clarifying question before answering.
-- Conversation memory keeps only recent turns (`--history-turns`).
-- Mapping answers are pretty-printed as JSON when valid JSON is returned.
-- Export supports JSON, Markdown, and RDF citation metadata.
-
-## RDF Demo
-
-1. Ingest bundled RDF sample:
+## Make Targets
 
 ```bash
-PYTHONPATH=src python -m cidoc_rag.cli.ingest_cli data/raw/cidoc_sample.ttl --out-dir data/vectorstore
-```
-
-1. Or with Make target:
-
-```bash
-make ingest-rdf-sample
-```
-
-## Batch Ingestion
-
-1. Ingest all supported files under a directory (recursive):
-
-```bash
+make help
+make install
+make install-editable
+make ingest
 make ingest-batch BATCH_PATH=data/raw
+make ingest-rdf-sample
+make retrieve QUERY="What is E21?" TOP_K=5
+make app QUERY="What is E21?"
+make app-chat
+make app-mapping SCHEMA='{"table":"authors","fields":["name"]}'
+make smoke
+make smoke-no-api
+make test
 ```
 
-1. Ingest all supported files under a custom path:
+## Reproducibility and Testing
+
+### Unit Tests
 
 ```bash
-make ingest-batch BATCH_PATH=/path/to/cidoc/files
+PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py"
 ```
+
+### End-to-End Smoke Test
+
+Online mode (requires Ollama):
+
+```bash
+PYTHONPATH=src python smoke_test.py
+```
+
+Offline deterministic mode (no API calls):
+
+```bash
+PYTHONPATH=src python smoke_test.py --no-api --offline-dim 64
+```
+
+## Research Usage Notes
+
+- This tool assists ontology interpretation and editing, but does not replace expert modeling decisions.
+- LLM-generated ontology edits should be validated before publication.
+- For experiments, export sessions and keep generated artifacts under version control where possible.
+
+## Contributing
+
+Contributions are welcome.
+
+Recommended workflow:
+
+1. Fork and create a feature branch.
+1. Add or update tests with your change.
+1. Run `make test` (and smoke checks if relevant).
+1. Open a pull request with rationale and reproducibility notes.
+
+See also:
+
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `SECURITY.md`
+
+## Citation
+
+If you use Calm Aurora in research, cite the repository (update author/version as needed):
+
+```bibtex
+@software{calm_aurora_2026,
+ title = {Calm Aurora},
+ author = {Krawczyk, Maciej},
+ year = {2026},
+ url = {https://github.com/eabald/calm-aurora}
+}
+```
+
+## License
+
+MIT License. See `LICENSE` for full text.
+
+## Acknowledgments
+
+- CIDOC CRM community and ontology maintainers
+- FAISS, RDFlib, and the open-source LLM ecosystem
