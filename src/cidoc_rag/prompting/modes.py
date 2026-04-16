@@ -4,6 +4,7 @@ import json
 from typing import Literal
 
 Mode = Literal["qa", "mapping"]
+TurnIntent = Literal["domain", "followup", "smalltalk", "other"]
 
 
 def detect_mode(query: str) -> Mode:
@@ -23,3 +24,14 @@ def detect_mode(query: str) -> Mode:
         pass
 
     return "qa"
+
+
+def detect_turn_intent(query: str) -> TurnIntent:
+    lowered = query.strip().lower()
+    if lowered in {"hi", "hello", "hey", "thanks", "thank you"}:
+        return "smalltalk"
+    if any(token in lowered for token in ["this", "that", "it", "which one", "same one", "more", "also"]):
+        return "followup"
+    if any(token in lowered for token in ["cidoc", "crm", "rdf", "class", "property", "mapping", "e", "p"]):
+        return "domain"
+    return "other"

@@ -77,14 +77,21 @@ def build_prompt(
     context: str,
     mode: Mode,
     history: Optional[List[Dict[str, str]]] = None,
+    retrieval_used: bool = True,
 ) -> str:
     history_text = _format_history(history)
     history_block = f"{history_text}\n\n" if history_text else ""
 
     if mode == "mapping":
+        intro = "Use ONLY the provided context."
+        if not retrieval_used:
+            intro = (
+                "No new retrieval context was used for this turn. "
+                "Use conversation history and state assumptions explicitly."
+            )
         return (
             "You are a CIDOC CRM expert.\n\n"
-            "Use ONLY the provided context.\n\n"
+            f"{intro}\n\n"
             "Task:\n"
             "Map the following question or schema to CIDOC CRM.\n\n"
             "Context:\n"
@@ -111,9 +118,16 @@ def build_prompt(
             "- Prefer multiple options if ambiguous"
         )
 
+    qa_intro = "Use ONLY the provided context. If the answer is not in the context, say \"I don't know\"."
+    if not retrieval_used:
+        qa_intro = (
+            "No new retrieval context was used for this turn. "
+            "Use conversation history and be explicit about assumptions."
+        )
+
     return (
         "You are a CIDOC CRM expert.\n\n"
-        "Use ONLY the provided context. If the answer is not in the context, say \"I don't know\".\n\n"
+        f"{qa_intro}\n\n"
         "Context:\n"
         f"{context}\n\n"
         f"{history_block}"

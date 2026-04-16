@@ -32,7 +32,7 @@ def main() -> int:
     print(f"[info] Loaded raw entries: {len(raw_entries)}")
 
     if not raw_entries:
-        print("[error] No entries found. Provide JSON/JSONL/TXT/MD input files.")
+        print("[error] No entries found. Provide JSON/JSONL/TXT/MD/RDF input files (.ttl, .rdf, .owl, .nt, .n3, .xml).")
         return 1
 
     print("[info] Normalizing entries...")

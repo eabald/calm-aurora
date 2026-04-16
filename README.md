@@ -69,7 +69,11 @@ PYTHONPATH=src python -m cidoc_rag.cli.app_cli --chat --k 5 --history-turns 4
 
 ## Interactive Chat
 
-The chat interface continuously accepts questions and runs retrieval + prompt generation for each turn.
+The chat interface continuously accepts questions and uses an agentic policy per turn:
+
+- Runs retrieval when CIDOC/domain grounding is needed.
+- Skips retrieval for simple small-talk/meta turns.
+- Asks one clarifying question when the request is ambiguous.
 
 1. Start chat mode:
 
@@ -83,15 +87,56 @@ PYTHONPATH=src python -m cidoc_rag.cli.app_cli --chat --k 5 --history-turns 4 --
 debug on
 debug off
 k=10
+export json ./exports/session.json
+export markdown ./exports/session.md
+export rdf ./exports/session.ttl
+import-rdf ./data/raw/my_ontology.ttl
+show-rdf
+apply-rdf
+save-rdf ./data/raw/my_ontology.edited.ttl
+clear-rdf
 exit
 quit
 ```
 
+1. RDF/Turtle edit workflow in chat:
+
+```text
+# Import an existing RDF/Turtle file into the session
+you> import-rdf ./data/raw/my_ontology.ttl
+
+# Ask for changes and request full updated RDF/Turtle output
+you> Add an rdfs:comment to E21 and return the full updated TTL in a ```ttl block.
+
+# Apply the last assistant RDF output to the in-memory RDF buffer
+you> apply-rdf
+
+# Save to a new file (or use save-rdf with no path to overwrite imported path)
+you> save-rdf ./data/raw/my_ontology.edited.ttl
+```
+
+1. Multiline input while chatting:
+
+```text
+# Option A: end a line with backslash to continue
+you> map this entity to CIDOC classes and properties \
+... including temporal constraints and written text.
+
+# Option B: use block delimiters (""", ''' , or ```)
+you> """
+... Describe this inscription and include start/end date mapping.
+... Return JSON only.
+... """
+```
+
 1. Behavior notes:
 
-- Retrieval always uses the current user query only.
-- Conversation memory is short and keeps only recent turns.
+- Retrieval runs only when the policy marks it as necessary.
+- Follow-up questions can reuse recent context without forced retrieval.
+- Ambiguous turns trigger a single clarifying question before answering.
+- Conversation memory keeps only recent turns (`--history-turns`).
 - Mapping answers are pretty-printed as JSON when valid JSON is returned.
+- Export supports JSON, Markdown, and RDF citation metadata.
 
 ## RDF Demo
 
