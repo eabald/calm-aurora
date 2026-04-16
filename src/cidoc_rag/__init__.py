@@ -1,0 +1,1 @@
+"""CIDOC RAG assistant package."""

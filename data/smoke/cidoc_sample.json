@@ -1,0 +1,20 @@
+[
+  {
+    "id": "E21",
+    "type": "class",
+    "label": "Person",
+    "definition": "This class comprises real persons who live or are assumed to have lived.",
+    "examples": "Leonardo da Vinci",
+    "related_properties": [
+      "P14 carried out by"
+    ]
+  },
+  {
+    "id": "P14",
+    "type": "property",
+    "label": "carried out by",
+    "domain": "E7 Activity",
+    "range": "E39 Actor",
+    "definition": "This property describes the active participation of an actor in an activity."
+  }
+]
