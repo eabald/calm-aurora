@@ -16,7 +16,7 @@ from cidoc_rag.vectorstore.faiss_store import save_index, save_metadata
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Ingest CIDOC CRM data and build FAISS index.")
+    parser = argparse.ArgumentParser(description="Calm Aurora CLI: ingest data and build FAISS index.")
     parser.add_argument("input_path", help="Path to CIDOC file or directory containing CIDOC files.")
     parser.add_argument("--text-delimiter", default=None, help="Optional delimiter for text file splits.")
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR, help="Output directory for artifacts.")

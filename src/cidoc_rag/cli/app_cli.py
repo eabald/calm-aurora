@@ -15,7 +15,7 @@ from cidoc_rag.config import get_llm_model
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="CIDOC retrieval + prompt app")
+    parser = argparse.ArgumentParser(description="Calm Aurora CLI: retrieval + prompt app")
     parser.add_argument("query", nargs="?", help="User question or schema JSON")
     parser.add_argument("--k", type=int, default=5, help="Top-k retrieval count")
     parser.add_argument("--index-path", default=DEFAULT_INDEX_PATH, help="Path to FAISS index file")

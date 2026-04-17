@@ -43,8 +43,8 @@ def print_results(results):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run semantic search over CIDOC FAISS index.")
-    parser.add_argument("query", help="Natural language query to search CIDOC entries.")
+    parser = argparse.ArgumentParser(description="Calm Aurora CLI: run semantic search over FAISS index.")
+    parser.add_argument("query", help="Natural language query to search Calm Aurora entries.")
     parser.add_argument("--index-path", default=DEFAULT_INDEX_PATH, help="Path to FAISS index file.")
     parser.add_argument("--metadata-path", default=DEFAULT_METADATA_PATH, help="Path to metadata JSON file.")
     parser.add_argument("--top-k", type=int, default=5, help="Number of nearest entries to return.")

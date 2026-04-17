@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive CLI chat for CIDOC CRM RAG."""
+"""Interactive CLI chat for Calm Aurora."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from cidoc_rag.cli.chat_runtime import (
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="CIDOC CRM interactive RAG chat")
+    parser = argparse.ArgumentParser(description="Calm Aurora interactive chat")
     parser.add_argument("--k", type=int, default=5, help="Initial top-k retrieval count")
     parser.add_argument("--index-path", default=DEFAULT_INDEX_PATH, help="Path to FAISS index file")
     parser.add_argument("--metadata-path", default=DEFAULT_METADATA_PATH, help="Path to metadata JSON file")
