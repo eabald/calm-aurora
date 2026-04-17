@@ -12,8 +12,19 @@ from cidoc_rag.vectorstore.faiss_store import build_index_flat_l2
 def build_document(entry: Dict[str, Any]) -> str:
     entry_id = clean_text(entry.get("id"))
     label = clean_text(entry.get("label"))
+    entry_type = clean_text(entry.get("type")).lower()
 
-    if clean_text(entry.get("type")) == "class":
+    if entry_type == "documentation":
+        definition = clean_text(entry.get("definition"))
+        source_file = clean_text(entry.get("source_file"))
+        parts = [f"{entry_id} {label}".strip(" .")]
+        if definition:
+            parts.append(f"Content: {definition}")
+        if source_file:
+            parts.append(f"Source: {source_file}")
+        return ". ".join(part for part in parts if part).strip()
+
+    if entry_type == "class":
         definition = clean_text(entry.get("definition"))
         examples = clean_text(entry.get("examples"))
         related = entry.get("related_properties", [])

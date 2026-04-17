@@ -20,6 +20,18 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(entry["range"], "")
         self.assertEqual(entry["definition"], "")
 
+    def test_prose_without_cidoc_id_becomes_documentation(self):
+        entry = normalize_entry(
+            {
+                "raw_text": "CIDOC CRM encourages documenting uncertainty and provenance.",
+                "_source_file": "data/docs/intro.md",
+            }
+        )
+        self.assertEqual(entry["type"], "documentation")
+        self.assertEqual(entry["label"], "Documentation chunk")
+        self.assertIn("documenting uncertainty", entry["definition"])
+        self.assertEqual(entry["source_file"], "data/docs/intro.md")
+
 
 if __name__ == "__main__":
     unittest.main()

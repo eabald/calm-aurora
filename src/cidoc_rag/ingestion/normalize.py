@@ -8,7 +8,9 @@ from cidoc_rag.utils import clean_text
 
 def _guess_type(raw_entry: Dict[str, Any], entry_id: str) -> str:
     explicit_type = clean_text(raw_entry.get("type")).lower()
-    if explicit_type in {"class", "property"}:
+    if explicit_type in {"class", "property", "documentation", "doc"}:
+        if explicit_type == "doc":
+            return "documentation"
         return explicit_type
 
     if entry_id.upper().startswith("P"):
@@ -21,6 +23,10 @@ def _guess_type(raw_entry: Dict[str, Any], entry_id: str) -> str:
 
     if {"domain", "range"}.intersection(keys) or "property" in raw_text:
         return "property"
+
+    # Free-form prose without CIDOC identifiers is best treated as supporting documentation.
+    if not entry_id and raw_text:
+        return "documentation"
     return "class"
 
 
@@ -37,7 +43,7 @@ def _extract_id(raw_entry: Dict[str, Any]) -> str:
             match = re.search(r"\b([EP]\d+[A-Za-z0-9\.]*)\b", value)
             return match.group(1) if match else value
 
-    text_blob = " ".join(clean_text(raw_entry.get(key)) for key in ["title", "label", "name", "raw_text"])
+    text_blob = " ".join(clean_text(raw_entry.get(key)) for key in ["title", "label", "name"])
     match = re.search(r"\b([EP]\d+[A-Za-z0-9\.]*)\b", text_blob)
     return match.group(1) if match else ""
 
@@ -57,6 +63,18 @@ def normalize_entry(raw_entry: Dict[str, Any]) -> Dict[str, Any]:
 
     label = _extract_first(raw_entry, ["label", "name", "title"])
     definition = _extract_first(raw_entry, ["definition", "scope_note", "description", "raw_text"])
+    source_file = clean_text(raw_entry.get("_source_file"))
+
+    if entry_type == "documentation":
+        if not label:
+            label = _extract_first(raw_entry, ["heading", "section", "topic"]) or "Documentation chunk"
+        return {
+            "id": clean_text(entry_id),
+            "type": "documentation",
+            "label": label,
+            "definition": definition,
+            "source_file": source_file,
+        }
 
     if entry_type == "class":
         examples = _extract_first(raw_entry, ["examples", "example"])
@@ -78,6 +96,7 @@ def normalize_entry(raw_entry: Dict[str, Any]) -> Dict[str, Any]:
             "definition": definition,
             "examples": examples,
             "related_properties": related_properties,
+            "source_file": source_file,
         }
 
     domain = _extract_first(raw_entry, ["domain", "domain_class"])
@@ -90,4 +109,5 @@ def normalize_entry(raw_entry: Dict[str, Any]) -> Dict[str, Any]:
         "domain": domain,
         "range": range_value,
         "definition": definition,
+        "source_file": source_file,
     }

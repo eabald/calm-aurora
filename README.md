@@ -152,6 +152,36 @@ PYTHONPATH=src python -m cidoc_rag.cli.app_cli "What is E21?" --k 5
 PYTHONPATH=src python -m cidoc_rag.cli.app_cli --chat --k 5 --history-turns 4
 ```
 
+## Extending Context With Documentation
+
+If you want broader CIDOC CRM knowledge beyond ontology triples, add prose sources alongside RDF files before ingestion.
+
+Suggested structure:
+
+```text
+data/
+    raw/
+        ontologies/
+            CIDOC_CRM_v7.1.3.rdf
+        docs/
+            cidoc_primer.md
+            crm_guidelines.txt
+            examples.jsonl
+```
+
+Then rebuild the vector store from both ontology and documentation files:
+
+```bash
+PYTHONPATH=src python -m cidoc_rag.cli.ingest_cli data/raw --out-dir data/vectorstore
+```
+
+Notes:
+
+- Markdown and text files are supported directly.
+- Free-form prose chunks are normalized as `documentation` entries.
+- Retrieved documentation chunks include source attribution in context blocks.
+- Keep authoritative ontology files in the corpus so generated answers remain grounded.
+
 ## Chat Runtime Commands
 
 ```text

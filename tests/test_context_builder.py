@@ -30,6 +30,22 @@ class ContextBuilderTests(unittest.TestCase):
         self.assertIn("Domain: E7 Activity", context)
         self.assertIn("Range: E39 Actor", context)
 
+    def test_builds_documentation_context(self):
+        results = [
+            {
+                "id": "",
+                "type": "documentation",
+                "label": "CRM Primer",
+                "definition": "Narrative guidance for applying CIDOC CRM in museum workflows.",
+                "source_file": "data/docs/primer.md",
+            }
+        ]
+
+        context = build_context(results)
+        self.assertIn("CRM Primer (Documentation)", context)
+        self.assertIn("Content: Narrative guidance", context)
+        self.assertIn("Source: data/docs/primer.md", context)
+
 
 if __name__ == "__main__":
     unittest.main()

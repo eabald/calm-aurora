@@ -17,6 +17,17 @@ def build_context(results: List[Dict[str, Any]]) -> str:
         label = clean_text(entry.get("label"))
         definition = clean_text(entry.get("definition"))
 
+        if entry_type == "documentation":
+            title = f"{entry_id} {label}".strip() or "Documentation chunk"
+            lines = [f"{title} (Documentation)"]
+            if definition:
+                lines.append(f"Content: {definition}")
+            source_file = clean_text(entry.get("source_file"))
+            if source_file:
+                lines.append(f"Source: {source_file}")
+            blocks.append("\n".join(lines))
+            continue
+
         if entry_type == "class":
             lines = [f"{entry_id} {label} (Class)".strip()]
             if definition:

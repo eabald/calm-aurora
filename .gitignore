@@ -219,7 +219,9 @@ __marimo__/
 env
 
 # Data
-data/raw/*
-!data/raw/.gitkeep
+data/raw/docs/*
+!data/raw/docs/.gitkeep
+data/raw/ontologies/*
+!data/raw/ontologies/.gitkeep
 data/vectorstore/*
 !data/vectorstore/.gitkeep

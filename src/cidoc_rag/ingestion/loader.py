@@ -159,6 +159,59 @@ def parse_text_chunk(chunk: str) -> Dict[str, Any]:
     return parsed
 
 
+def _chunk_long_text(text: str, max_chars: int = 2400, overlap: int = 250) -> List[str]:
+    normalized = text.strip()
+    if not normalized:
+        return []
+    if len(normalized) <= max_chars:
+        return [normalized]
+
+    chunks: List[str] = []
+    start = 0
+    length = len(normalized)
+    while start < length:
+        end = min(start + max_chars, length)
+        if end < length:
+            # Try to break at whitespace for cleaner chunks.
+            split_at = normalized.rfind(" ", start + (max_chars // 2), end)
+            if split_at > start:
+                end = split_at
+        piece = normalized[start:end].strip()
+        if piece:
+            chunks.append(piece)
+        if end >= length:
+            break
+        start = max(0, end - overlap)
+    return chunks
+
+
+def _auto_split_text(content: str, suffix: str) -> List[str]:
+    stripped = content.strip()
+    if not stripped:
+        return []
+
+    sections: List[str] = []
+    if suffix == ".md":
+        heading_pattern = re.compile(r"(?m)^#{1,6}\s+.+$")
+        matches = list(heading_pattern.finditer(stripped))
+        if matches:
+            for idx, match in enumerate(matches):
+                start = match.start()
+                end = matches[idx + 1].start() if idx + 1 < len(matches) else len(stripped)
+                section = stripped[start:end].strip()
+                if section:
+                    sections.append(section)
+        else:
+            sections = [part.strip() for part in re.split(r"\n\s*\n+", stripped) if part.strip()]
+    else:
+        sections = [part.strip() for part in re.split(r"\n\s*\n+", stripped) if part.strip()]
+
+    final_chunks: List[str] = []
+    for section in sections:
+        final_chunks.extend(_chunk_long_text(section))
+    return final_chunks if final_chunks else _chunk_long_text(stripped)
+
+
 def _load_json_or_jsonl_file(file_path: Path) -> List[Dict[str, Any]]:
     content = file_path.read_text(encoding="utf-8").strip()
     if not content:
@@ -196,7 +249,8 @@ def _load_text_file(file_path: Path, text_delimiter: Optional[str]) -> List[Dict
         chunks = [chunk for chunk in content.split(text_delimiter) if chunk.strip()]
         return [parse_text_chunk(chunk) for chunk in chunks]
 
-    return [parse_text_chunk(content)]
+    chunks = _auto_split_text(content, file_path.suffix.lower())
+    return [parse_text_chunk(chunk) for chunk in chunks]
 
 
 def load_raw_data(path: str, text_delimiter: Optional[str] = None) -> List[Dict[str, Any]]:
